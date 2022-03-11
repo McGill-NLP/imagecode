@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<style>
+  .reload {
+    font-family: Lucida Sans Unicode
+  }
+</style>
+<script>
+  // on ducment load call AJAX to get the data
+  function strToHTML(str) {
+    //string to JSON
+    var obj = JSON.parse(str);
+    var htmlString = "";
+    //loop through the JSON object
+    for (var i = 0; i < obj.length; i++) {
+      var isUnanswerbale = obj[i]["Answer"] == "UNANSWERABLE"
+      htmlString += "<b>Question " + (i+1).toString() + ":</b> " + obj[i]["Question"] + "<br>";
+      if (!isUnanswerbale){
+        htmlString += "<b>Rationale :</b> <i>" + obj[i]["Rationale"].substring(0, 100);
+          if (obj[i]["Rationale"].length > 100) {
+            htmlString += "... "
+            // htmlString += "<a href='#' class='show-more' data-toggle='modal' data-target='#rationaleModal" + (i+1).toString() + "'>Show More</a>"
+          }
+        htmlString += "</i><br>";
+        // htmlString += "<div id='rationaleModal" + (i+1).toString() + "' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='rationaleModal" + (i+1).toString() + "' aria-hidden='true'>"
+        // htmlString += "<p>testing</p>"
+        // htmlString += "</div>"
+      }
+      htmlString += "<b>Answer " + (i+1).toString() + ":</b> " + obj[i]["Answer"] + "<br>";
+      if (!isUnanswerbale){
+        var hrefLink = "https://en.wikipedia.org/wiki/" + obj[i]["Topic"].replaceAll(" ", "_");
+        if (obj[i]["Topic_section"] != "Introduction")
+          hrefLink += "#" + obj[i]["Topic_section"].replaceAll(" ", "_");
+        htmlString += "<b>Web Page :</b> <i>" + "<a href='" + hrefLink + "' target='_blank'>" + obj[i]["Topic"] + " (" + obj[i]["Topic_section"] + ")</a></i><br>";
+        }
+      htmlString += "<br>";
+    }
+
+    return htmlString;
+  }
+  function getConversation() {
+    console.log("ready!");
+    $.ajax({
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      type: 'GET',
+      dataType: 'json',
+      url: 'https://5du8ytlzg9.execute-api.us-east-2.amazonaws.com/default/topiocqaGetExample',
+      success: function(data) {
+        console.log(data["body"]);
+        $("#datasetExplorer").html(strToHTML(data["body"]));
+      }, error: function(data) {
+        $("#datasetExplorer").html("<p>Failed to load conversation, please try after some time.</p>");
+      }
+    });
+  }
+  $(document).ready(function() {
+    getConversation();
+  });
+</script>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset="UTF-8">
+    <title>TopiOCQA</title>
+    <link rel="icon" href="https://mcgill-nlp.github.io/topiocqa/topiocqa_no_background.png">
+
+{% seo %}
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    {% include head-custom.html %}
+  </head>
+  <body>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <header class="page-header" role="banner" style="background-image: linear-gradient(120deg, #d7816a, #bd4f6c);">
+      <h2 class="project-name"><img src="topiocqa_no_background.png" alt="logo" width="100" height="100" style="margin-bottom: -20px;"/>TopiOCQA: Open-domain Conversational Question Answering with Topic Switching</h2>
+      <h2 class="project-tagline">Vaibhav Adlakha, Shehzaad Dhuliawala, Kaheer Suleman, Harm de Vries, Siva Reddy</h2>
+      {% if site.github.is_project_page %}
+        <a href="https://arxiv.org/abs/2110.00768" target='_blank' class="btn">View paper on arXiv</a>
+      {% endif %}
+      <a href="https://github.com/McGill-NLP/topiocqa" target='_blank' class="btn">View code on GitHub</a>
+      <a href="https://zenodo.org/record/6193037/files/topiocqa.zip?download=1" class="btn">Download dataset</a>
+      {% if site.show_downloads %}
+        <a href="{{ site.github.tar_url }}" class="btn">Download .tar.gz</a>
+      {% endif %}
+    </header>
+
+    <main id="content" class="main-content" role="main">
+      <h1 class="dataset-explorer" style="color: #d7816a;">Overview</h1>
+        <p>We introduce a new information-seeking conversational dataset with challenging topic switching phenomenons, and evaluate state-of-the-art Question Answering models on it. </p>
+        <p>The paper is available on <a href="https://arxiv.org/abs/2110.00768">arXiv</a> and the code to replicate the experiments can be found on <a href="https://github.com/McGill-NLP/topiocqa">GitHub</a>. The dataset can be downloaded from <a href="https://mcgill-nlp.github.io/topiocqa/topiocqa.zip">here</a>. The interactive demo below loads a random conversation from the training set.</p>
+      <h1 class="dataset-explorer" style="color: #d7816a;">Dataset Explorer <button style="background-color: white; border: 0px;"><span onclick="getConversation()" class=reload>&#x21bb;</span></button></h1>
+      <div class="dataset-explorer-container col-md-12" id="datasetExplorer" style="background-image: linear-gradient(120deg, #fbece8, #f8cad6); padding: 2em;">
+        <p>Loading...</p>
+      </div>
+      <p>For queries and clarifications please contact <b> vaibhav.adlakha (at) mila (dot) quebec </b></p>
+      {{ content }}
+
+      <footer class="site-footer">
+        {% if site.github.is_project_page %}
+          <span class="site-footer-owner"><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a> is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span>
+        {% endif %}
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
+  </body>
+</html>
