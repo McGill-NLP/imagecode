@@ -1,0 +1,21 @@
+TASK3:
+  name: VQA
+  type: VL-classifier
+  num_labels: 2
+  loss: BCEWithLogitLoss
+  process: normal
+  task_id: 3
+  dataroot: ../../data/vilbert_data_format
+  #  features_h5path1: ../../data/rcnn-features36-36.lmdb
+  features_h5path1: /network/scratch/b/benno.krojer/dataset/rcnn-features36-36.lmdb
+  features_h5path2: ''
+  train_annotations_jsonpath: ''
+  val_annotations_jsonpath: ''
+  max_seq_length: 120
+  max_region_num: 36
+  #  batch_size: 256
+  #  eval_batch_size: 256
+  train_batch_size: 128
+  val_batch_size: 32
+  train_split: train
+  val_split: val
