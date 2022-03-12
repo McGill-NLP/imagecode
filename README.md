@@ -32,3 +32,21 @@ For example to train the best performing model CLIP+TemporalEmbeddings, run:
 ## Data Analysis
 
 Our manual annotation of various phenomena (negation, nuances, ...) in our validation set can be found under `data/manual_annotation_valid.yaml`
+
+## License
+
+This work is licensed under the MIT license. See [`LICENSE`](LICENSE) for details. 
+Third-party software and data sets are subject to their respective licenses. <br>
+If you want to cite our paper, please use:
+```
+To appear soon.
+```
+
+## Acknowledgement
+Our data (specifically the image sets) are built upon 3 video dataset and Open Images:
+- [MSR-VTT](https://www.microsoft.com/en-us/research/publication/msr-vtt-a-large-video-description-dataset-for-bridging-video-and-language/)
+- [Video Storytelling](https://zenodo.org/record/2383739#.Yizc2Iz0nUR)
+- [YouCook](https://web.eecs.umich.edu/~jjcorso/r/youcook/)
+- [Open Images](https://storage.googleapis.com/openimages/web/index.html)
+
+We also the [volta repository](https://github.com/e-bug/volta) for ViLBERT and UNITER baseline variants
