@@ -25,8 +25,44 @@ The same procedure applies for UNITER.
     "7": "The image is fading between a woman holding a baby and a woman sitting with a red background. The hands of the woman sitting aren't visible."
   },
   "video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2": {
-  ....
+  "..."
+  }
+}
 ```
+And the images under `data/` have the following structure. Each folder contains 10 images. If the images are video frames, the number X in imgX.jpg indicates the frame number:
+├── MSR-VTT-videoTrainValVideo_video2044-shot1_0
+    │   ├── img0.jpg
+    │   ├── img7.jpg
+    │   ├── ...
+├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
+    │   ├── ...
+
+Based on this you can train your model and test on the unlabeled test set:
+```json
+{
+  "MSR-VTT-videoTestVideo_video7763-shot2_1": [
+    "The team name on shirt is visible without a number, but all letters can be seen for team name.",
+    "the player can be seen with him on the left close to the logo on the pitch on the right and can be clearly seen"
+  ],
+  "...":
+  ["..."]
+}
+```
+
+In order to appear on the leaderboard, please format your results in the following format:
+```json
+{
+  "MSR-VTT-videoTestVideo_video7763-shot2_1": [
+    1,
+    2
+  ],
+  "...":
+  ["..."]
+}
+```
+Where the example here with "1" and "2" represent image indices ranging from 0 to 9.
+You can then submit to the leaderboard by <WILL BE DETERMINED>.
+The leaderboard is maintained on the [project website](https://mcgill-nlp.github.io/imagecode/).
 
 ## Installations
 
