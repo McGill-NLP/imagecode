@@ -14,7 +14,7 @@ For ViLBERT experiments, you need to download pretrained ViLBERT from volta [her
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
 
-### Data Format: How to get started with ImageCoDe
+### Data Format: Get started with training and testing
 
 [`data/train_data.json`](data/train_data.json) looks like this:
 
