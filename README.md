@@ -61,7 +61,7 @@ In order to appear on the leaderboard, please format your results in the followi
 }
 ```
 Where the example here with "1" and "2" represent image indices ranging from 0 to 9.
-You can then submit to the leaderboard by <WILL BE DETERMINED>.
+You can then submit to the leaderboard by <<<WILL BE DETERMINED>>>.
 The leaderboard is maintained on the [project website](https://mcgill-nlp.github.io/imagecode/).
 
 ## Installations
