@@ -14,6 +14,20 @@ For ViLBERT experiments, you need to download pretrained ViLBERT from volta [her
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
 
+### Data Format: How to get started with ImageCoDe
+
+[`data/train_data.json`](data/train_data.json) looks like this:
+
+```json
+{
+  "MSR-VTT-videoTrainValVideo_video2044-shot1_0": {
+    "6": "a mom holding her babies in the middle of the picture, no other image intervenes with the image.",
+    "7": "The image is fading between a woman holding a baby and a woman sitting with a red background. The hands of the woman sitting aren't visible."
+  },
+  "video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2": {
+  ....
+```
+
 ## Installations
 
 Run [`install.sh`](install.sh) for running CLIP experiments.
