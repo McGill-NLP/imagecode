@@ -14,9 +14,7 @@ For ViLBERT experiments, you need to download pretrained ViLBERT from volta [her
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
 
-### Data Format: Get started with training and testing
-
-[`data/train_data.json`](data/train_data.json) looks like this:
+The formoat for [`data/train_data.json`](data/train_data.json) looks like this:
 
 ```json
 {
@@ -36,6 +34,8 @@ And the images under `data/` have the following structure. Each folder contains 
     │   ├── ...
 ├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
     │   ├── ...
+
+### Leaderboard
 
 Based on this you can train your model and test on the unlabeled test set:
 ```json
@@ -61,8 +61,8 @@ In order to appear on the leaderboard, please format your results in the followi
 }
 ```
 Where the example here with "1" and "2" represent image indices ranging from 0 to 9.
-You can then submit to the leaderboard TO BE DETERMINED.
-The leaderboard is maintained on the [project website](https://mcgill-nlp.github.io/imagecode/).
+You can submit to the leaderboard by sending your test set file (or a download link) to benno.krojer@mila.quebec and we will update the leaderboard quickly (max. 1-2 days).
+The leaderboard is maintained on the [project website](https://mcgill-nlp.github.io/imagecode/) and might change its submission procedure at some point.
 
 ## Installations
 
