@@ -1,7 +1,5 @@
 # ImageCoDe
-This repository contains code and data for ImageCoDe: [Image Retrieval from Contextual Descriptions](https://openreview.net/forum?id=ObaBB7DvM4).
-
-For questions or feedback, don't hesitate to contact the author: benno.krojer@mila.quebec
+This repository contains code and data for ImageCoDe: [Image Retrieval from Contextual Descriptions](https://arxiv.org/abs/2203.15867). 
 
 ![Example](https://github.com/mcgill-nlp/ImageCoDe/blob/main/example.png?raw=true)
 
@@ -110,3 +108,6 @@ Our data (specifically the image sets) are built upon 3 video dataset and Open I
 - [Open Images](https://storage.googleapis.com/openimages/web/index.html)
 
 We also the [volta repository](https://github.com/e-bug/volta) for ViLBERT and UNITER baseline variants
+
+For questions or feedback, don't hesitate to contact the author: benno.krojer@mila.quebec
+
