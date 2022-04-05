@@ -14,7 +14,7 @@ For ViLBERT experiments, you need to download pretrained ViLBERT from volta [her
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
 
-The formoat for [`data/train_data.json`](data/train_data.json) looks like this:
+The format for [`data/train_data.json`](data/train_data.json) looks like this:
 
 ```json
 {
@@ -28,6 +28,7 @@ The formoat for [`data/train_data.json`](data/train_data.json) looks like this:
 }
 ```
 And the images under `data/` have the following structure. Each folder contains 10 images. If the images are video frames, the number X in imgX.jpg indicates the frame number:
+```
   .
   ├── MSR-VTT-videoTrainValVideo_video2044-shot1_0
       │   ├── img0.jpg
@@ -35,7 +36,7 @@ And the images under `data/` have the following structure. Each folder contains 
       │   ├── ...
   ├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
       │   ├── ...
-
+```
 ### Leaderboard
 
 Based on this you can train your model and test on the unlabeled test set:
