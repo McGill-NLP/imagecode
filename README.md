@@ -28,12 +28,13 @@ The formoat for [`data/train_data.json`](data/train_data.json) looks like this:
 }
 ```
 And the images under `data/` have the following structure. Each folder contains 10 images. If the images are video frames, the number X in imgX.jpg indicates the frame number:
-├── MSR-VTT-videoTrainValVideo_video2044-shot1_0
-    │   ├── img0.jpg
-    │   ├── img7.jpg
-    │   ├── ...
-├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
-    │   ├── ...
+  .
+  ├── MSR-VTT-videoTrainValVideo_video2044-shot1_0
+      │   ├── img0.jpg
+      │   ├── img7.jpg
+      │   ├── ...
+  ├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
+      │   ├── ...
 
 ### Leaderboard
 
