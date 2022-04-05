@@ -89,7 +89,15 @@ This work is licensed under the MIT license. See [`LICENSE`](LICENSE) for detail
 Third-party software and data sets are subject to their respective licenses. <br>
 If you want to cite our paper, please use:
 ```
-To appear soon.
+@inproceedings{meade_empirical_2022,
+  address = {Online},
+  title = {An Empirical Survey of the Effectiveness of Debiasing Techniques for Pre-trained Language Models},
+  booktitle = {Proceedings of the 60th {Annual} {Meeting} of the {Association} for {Computational} {Linguistics},
+  publisher = {Association for Computational Linguistics},
+  author = {Meade, Nicholas and Poole-Dayan, Elinor and Reddy, Siva},
+  month = may,
+  year = {2022},
+}
 ```
 
 ## Acknowledgement
