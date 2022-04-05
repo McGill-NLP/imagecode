@@ -3,7 +3,7 @@ This repository contains code and data for ImageCoDe: [Image Retrieval from Cont
 
 For questions or feedback, don't hesitate to contact the author: benno.krojer@mila.quebec
 
-![Example](https://github.com/BennoKrojer/ImageCoDe/blob/main/example.png?raw=true)
+![Example](https://github.com/mcgill-nlp/ImageCoDe/blob/main/example.png?raw=true)
 
 ## Data
 All collected descriptions for the training and validation set are under [`data/train_data.json`](data/train_data.json) and [`data/valid_data.json`](data/valid_data.json).
