@@ -1,4 +1,7 @@
 # ImageCoDe
+
+[![arxiv](https://img.shields.io/badge/arXiv-2203.15867-b31b1b.svg)](https://arxiv.org/abs/2203.15867)
+
 This repository contains code and data for ImageCoDe: [Image Retrieval from Contextual Descriptions](https://arxiv.org/abs/2203.15867). 
 
 ![Example](https://github.com/mcgill-nlp/ImageCoDe/blob/main/example.png?raw=true)
