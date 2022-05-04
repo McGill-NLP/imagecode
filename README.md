@@ -12,7 +12,8 @@ All collected descriptions for the training and validation set are under [`data/
 Image sets can be downloaded on [Zenodo](https://zenodo.org/record/6518944#.YnLboHWZPUQ) or [GoogleDrive](https://drive.google.com/file/d/1OIKNyU0F9lThbaZZ3Jvm7AlF94n1MzDk/view?usp=sharing) and should be unzipped in `data/`.
 
 You can download from the commandline via:
-`wget https://zenodo.org/record/6518944/files/image-sets.zip?download=1`
+
+`wget https://zenodo.org/record/6518944/files/image-sets.zip`
 
 For ViLBERT experiments, you need to download a pretrained ViLBERT checkpoint from volta [here](https://github.com/e-bug/volta/blob/main/MODELS.md), simply by clicking on ViLBERT in the table. Save the downloaded file as `baselines/vilbert/vilbert-pretrained.bin`.
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
