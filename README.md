@@ -86,7 +86,9 @@ For details commands to run each model variant shown in the paper, have a look a
 
 For example to train the best performing model CLIP+TemporalEmbeddings, run:
 
-```python3 contextual.py --lr 2e-6 --lr_head 1e-4 -b 36 -m ViT-B/16 --fusion mult -a gelu --logit_scale 1000 --finetuned_checkpoint_path checkpoints/CONTRA_clip_best__36_4e-06_30_1395526.pt --add_input --frozen_clip --positional```
+```
+python3 contextual.py --lr 2e-6 --lr_head 1e-4 -b 36 -m ViT-B/16 --fusion mult -a gelu --logit_scale 1000 --finetuned_checkpoint_path checkpoints/CONTRA_clip_best__36_4e-06_30_1395526.pt --add_input --frozen_clip --positional
+```
 
 ## Data Analysis
 
