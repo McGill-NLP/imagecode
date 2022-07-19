@@ -3,9 +3,8 @@
 import json
 import os
 import random
-import wandb
-import clip
-from clip import model
+import clip_src
+from clip_src import model
 import torch
 from torch import autograd
 import tqdm
@@ -22,8 +21,6 @@ import argparse
 
 random.seed(10)
 torch.manual_seed(10)
-wandb.init(project='contextualclip', notes="fixed pos emb", entity='bennokrojer', settings=wandb.Settings(start_method="fork"))
-
 
 def find_best_matches(text_features, photo_features):
     similarities = (photo_features @ text_features.T).squeeze(1)
@@ -42,7 +39,7 @@ def convert_models_to_fp32(model):
 class ContextualCLIP(torch.nn.Module):
     def __init__(self, bert_config, args):
         super(ContextualCLIP, self).__init__()
-        self.clip, self.preprocess = clip.load('ViT-B/16', device=device, jit=False)
+        self.clip, self.preprocess = clip_src.load('ViT-B/16', device=device, jit=False)
         config = BertConfig.from_dict(bert_config)
         self.fusion = args.fusion
         if self.fusion == 'concat':
@@ -106,15 +103,14 @@ class ContextualCLIP(torch.nn.Module):
 
     def encode_text(self, search_query):
         with torch.no_grad():
-            text_encoded = self.clip.encode_text(clip.tokenize(search_query, truncate=True).to(device))
+            text_encoded = self.clip.encode_text(clip_src.tokenize(search_query, truncate=True).to(device))
             text_encoded /= text_encoded.norm(dim=-1, keepdim=True)
         return text_encoded.cpu().numpy()
 
 
-config = wandb.config
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint', type=str)
-parser.add_argument('--test_descr_path', type=str, default='../../data/test_data.json')
+parser.add_argument('--test_descr_path', type=str, default='../../data/valid_data.json')
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument("-b", "--batchsize", type=int, default=36)
 parser.add_argument("--fusion", type=str, default='mult')
@@ -122,16 +118,16 @@ parser.add_argument("-a", "--activation", default='gelu')
 parser.add_argument("-s", "--logit_scale", default=1000)
 parser.add_argument("--frozen_clip", default=True)
 parser.add_argument("--add_input", default=True)
-parser.add_argument("--positional", action="store_true")
+parser.add_argument("--positional", default=True)
 parser.add_argument("--head_scheduler", default= 1.0, type=float)
 parser.add_argument("--base_scheduler", default= 1.0, type=float)
 parser.add_argument("--transformer_layers", default=2, type=int)
+parser.add_argument('--decompose', action='store_true')
 parser.add_argument("--job_id")
 
 args = parser.parse_args()
 assert args.fusion in ['concat', 'mult']
 assert args.activation in ['leaky-relu', 'relu', 'gelu']
-wandb.config.update(args)
 
 img_dirs = args.imgs_path
 valid_data = json.load(open(args.test_descr_path, 'r'))
@@ -147,12 +143,10 @@ contextual_clip = ContextualCLIP(bert_config, args)
 checkpoint = torch.load(args.checkpoint)
 contextual_clip.load_state_dict(checkpoint['model_state_dict'])
 
-config = wandb.config
-wandb.watch(contextual_clip)
 if device == "cpu":
     contextual_clip.float()
 else:
-    clip.model.convert_weights(
+    clip_src.model.convert_weights(
         contextual_clip)  # Actually this line is unnecessary since clip by default already on float16
 
 
@@ -163,24 +157,71 @@ vid_total = 0
 img_correct= 0
 img_total = 0
 
+def process_text(text):
+    if "!!!" in text and args.decompose:
+        queries = text.split("!!!")
+    else:
+        queries = [text]
+    flipped = []
+    new_queries = []
+    for q in queries:
+        q = q.strip()
+        if q[0] == '(':
+            q = q[1:-1]
+            flipped.append(True)
+        else:
+            flipped.append(False)
+        new_queries.append(q)
+    
+    return new_queries, flipped
+
 results = defaultdict(dict)
-for img_dir, img_idx, text in tqdm.tqdm(valid):
-    text = [text]
+count = 0
+for img_dir, img_idx, text in valid:
+    print(count)
+    if count == 93:
+        break
+    count += 1
+    queries, flipped = process_text(text)
+    # text = [text]
     img_idx = int(img_idx)
     img_files = list((Path(img_dirs) / img_dir).glob("*.jpg"))
     img_files = sorted(img_files, key=lambda x: int(str(x).split('/')[-1].split('.')[0][3:]))
     images = [Image.open(photo_file) for photo_file in img_files]
     images = torch.stack([contextual_clip.preprocess(photo) for photo in images]).to(device)
-    text = clip.tokenize(text, truncate=True).to(device)
+    queries = clip_src.tokenize(queries, truncate=True).to(device).unsqueeze(1)
     if "open-images" in str(img_dir):
         pos_mask = torch.zeros((10,1)).cuda()
     else:
         pos_mask = torch.ones((10,1)).cuda()
-    with torch.no_grad():
-        logits = contextual_clip(images, text, pos_mask).squeeze()
-    pred = torch.argmax(logits).squeeze()
+    stats = {i : (0, 1) for i in range(10)}
+    for query, flip in zip(queries, flipped):
+        with torch.no_grad():
+            logits = contextual_clip(images, query, pos_mask).squeeze()
+            if flip:
+                logits = -logits
+            ranks = torch.argsort(logits, descending=True)
+            soft = torch.nn.functional.softmax(logits)
+            for i, r in enumerate(ranks):
+                r = r.item()
+                stats[r] = stats[r][0] + i, stats[r][1] * soft[r]
+    best_idx = 0
+    best_added_rank = 1000
+    best_softmax = 0
+    for idx, (rank, softmax) in stats.items():
+        if rank < best_added_rank:
+            best_added_rank = rank
+            best_softmax = softmax
+            best_idx = idx
+        elif rank == best_added_rank:
+            if softmax > best_softmax:
+                best_idx = idx
+    pred = best_idx
     if img_idx == pred:
         correct += 1
+        print("CORRECT")
+    else:
+        print("FALSE")
     if 'open-images' in img_dir:
         img_total += 1
         if img_idx == pred:
@@ -191,10 +232,10 @@ for img_dir, img_idx, text in tqdm.tqdm(valid):
             vid_correct += 1        
 
     total += 1
-    results[img_dir].update({f'raw_preds_{img_idx}': logits.squeeze().tolist(), f'clip_pred_{img_idx}': int(pred.item()) ,f'correct_{img_idx}': 1 if img_idx == pred else 0})
+    results[img_dir].update({f'raw_preds_{img_idx}': logits.squeeze().tolist(), f'clip_pred_{img_idx}': int(pred) ,f'correct_{img_idx}': 1 if img_idx == pred else 0})
 
 print('OVERALL ACC: ' + str(round(correct/len(valid),4)))
 print('VIDEO ACC: ' + str(round(vid_correct/vid_total,4)))
 print('IMG ACC: ' + str(round(img_correct/img_total,4)))
-json.dump(results, open(f'results/nocontra-test-data.json', 'w'), indent=2)
-json.dump(results, open(f'results/CONTEXTUAL_test_set.json', 'w'), indent=2)
+# json.dump(results, open(f'results/nocontra-test-data.json', 'w'), indent=2)
+# json.dump(results, open(f'results/CONTEXTUAL_test_set.json', 'w'), indent=2)
