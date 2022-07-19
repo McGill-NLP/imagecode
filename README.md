@@ -17,6 +17,8 @@ You can download from the commandline via:
 wget https://zenodo.org/record/6518944/files/image-sets.zip
 ```
 
+Alternatively, you can use [HuggingFace Datasets](https://huggingface.co/datasets/BennoKrojer/ImageCoDe) for working with ImageCoDe.
+
 For ViLBERT experiments, you need to download a pretrained ViLBERT checkpoint from volta [here](https://github.com/e-bug/volta/blob/main/MODELS.md), simply by clicking on ViLBERT in the table. Save the downloaded file as `baselines/vilbert/vilbert-pretrained.bin`.
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
