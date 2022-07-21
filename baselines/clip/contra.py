@@ -1,5 +1,6 @@
 # inspired from: https://github.com/openai/CLIP/issues/83
 # https://github.com/openai/CLIP/issues/83
+from importlib import import_module
 import json
 import os
 import random
@@ -8,33 +9,18 @@ import clip
 from clip import model
 import torch
 from torch import autograd
+from torch.utils.data import DataLoader
+from dataset import ImageCoDeDataset
 import tqdm
 from torch import nn, optim
 from PIL import Image
 from pathlib import Path
 from collections import defaultdict
 import argparse
+from functools import partial
 random.seed(10)
 torch.manual_seed(10)
 wandb.init(project='finetune-clip', settings=wandb.Settings(start_method='fork'))
-
-
-def encode_images(photos_batch):
-    photos = [Image.open(photo_file) for photo_file in photos_batch]
-    photos_preprocessed = torch.stack([preprocess(photo) for photo in photos]).to(device)
-
-    with torch.no_grad():
-        photos_features = model.encode_image(photos_preprocessed)
-        photos_features /= photos_features.norm(dim=-1, keepdim=True)
-    return photos_features.cpu().numpy()
-
-
-def encode_text(search_query):
-    with torch.no_grad():
-        text_encoded = model.encode_text(clip.tokenize(search_query, truncate=True).to(device))
-        text_encoded /= text_encoded.norm(dim=-1, keepdim=True)
-    return text_encoded.cpu().numpy()
-
 
 def find_best_matches(text_features, photo_features):
     similarities = (photo_features @ text_features.T).squeeze(1)
@@ -52,64 +38,73 @@ def convert_models_to_fp32(model):
 config = wandb.config
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchsize', type=int, default=36)
+parser.add_argument('--grad_accumulation', type=int, default=1)
 parser.add_argument('--lr', type=float, default=4e-6)
+parser.add_argument('--vit', type=str)
 parser.add_argument('--epochs', type=int, default=30)
-parser.add_argument('--valid_descr_path', type=str, default='../../data/valid_data.json')
-parser.add_argument('--train_descr_path', type=str, default='../../data/train_data.json')
+parser.add_argument('--data_dir', type=str, default='../../data/')
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument("--job_id")
 
 args = parser.parse_args()
 wandb.config.update(args)
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f'DEVICE USED: {device}')
-model, preprocess = clip.load('ViT-B/16', device=device, jit=False)
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print(f'DEVICE USED: {DEVICE}')
+model, preprocess = clip.load(args.vit, device=DEVICE, jit=False)
 wandb.watch(model)
-if device == "cpu":
+if DEVICE == "cpu":
     model.float()
 else:
     clip.model.convert_weights(model)  # Actually this line is unnecessary since clip by default already on float16
 
-img_dirs = args.imgs_path
-valid_data = json.load(open(args.valid_descr_path, 'r'))
-train_data = json.load(open(args.train_descr_path, 'r'))
-train = []
-for img_dir, data in train_data.items():
-    for img_idx, text in data.items():
-        train.append((img_dir, int(img_idx), text))
-valid = []
-for img_dir, data in valid_data.items():
-    for img_idx, text in data.items():
-        valid.append((img_dir, int(img_idx), text))
+
+dataset_train = ImageCoDeDataset(
+    data_dir=args.data_dir,
+    split='train',
+    image_transform=preprocess,
+    text_transform=partial(clip.tokenize, truncate=True)
+)
+dataloader_train = DataLoader(
+    dataset=dataset_train,
+    batch_size=args.batchsize,
+    shuffle=True,
+    num_workers=8,
+    pin_memory=True
+)
+dataset_valid = ImageCoDeDataset(
+    data_dir=args.data_dir,
+    split='valid',
+    image_transform=preprocess,
+    text_transform=partial(clip.tokenize, truncate=True)
+)
+dataloader_valid = DataLoader(
+    dataset=dataset_valid,
+    batch_size=1,
+    shuffle=False,
+    num_workers=8,
+    pin_memory=True
+)
 
 loss_img = nn.CrossEntropyLoss()
 loss_txt = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-6, weight_decay=0.2)
+optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-6)
 best_val = 0
 
-sigm = nn.Sigmoid()
 for i in range(args.epochs):
     save_model = False
     # EVALUATE
     if i != 0:
         correct = 0
-        ranks = defaultdict(int)
-        for img_dir, img_idx, text in tqdm.tqdm(valid):
-            img_files = list((Path(img_dirs)/img_dir).glob("*.jpg"))
-            img_files = sorted(img_files, key=lambda x: int(str(x).split('/')[-1].split('.')[0][3:]))
-            img_embs = encode_images(img_files)
-            text_emb = encode_text(text.strip())
-            ranked_idx, sim = find_best_matches(text_emb, img_embs)
-            ranked_files = [str(img_files[rank]).split('/')[-1][:-4] for rank in ranked_idx]
-            target = str(img_files[int(img_idx)]).split('/')[-1][:-4]
-            if ranked_files[0] == target:
+        for images, text, target, is_video in tqdm.tqdm(dataloader_valid):
+            images = images.to(DEVICE)
+            text = text.to(DEVICE)
+            target = target.to(DEVICE)
+            is_video = is_video.to(DEVICE)
+            ranked_idx, sim = find_best_matches(text, images)
+            if ranked_idx == target:
                 correct += 1
-            ranks[ranked_files.index(target)+1] += 1
-        print(correct)
-        print(len(valid))
-        print(ranks)
-        acc = correct / len(valid)
+        acc = correct / len(dataloader_valid)
         wandb.log({'val_acc': acc})
         if acc > best_val:
             best_val = acc
@@ -126,26 +121,20 @@ for i in range(args.epochs):
         print('------------------------------')
 
     print(f'EPOCH: {i}')
-    step = 0
-    random.shuffle(train)
-    for img_dir, img_idx, text in train:
-        step += 1
-        text = [text]
-        img_idx = int(img_idx)
-        img_files = list((Path(img_dirs) / img_dir).glob("*.jpg"))
-        img_files = sorted(img_files, key=lambda x: int(str(x).split('/')[-1].split('.')[0][3:]))
-        images = [Image.open(photo_file) for photo_file in img_files]
-        images = torch.stack([preprocess(photo) for photo in images]).to(device)
-        text = clip.tokenize(text, truncate=True).to(device)
+    for step, (images, text, target, is_video) in tqdm.tqdm(enumerate(dataloader_train)):
+        images = images.to(DEVICE)
+        images = images.reshape(images.shape[0]*images.shape[1], *images.shape[2:]) 
+        text = text.to(DEVICE).squeeze(1)
+        target = target.to(DEVICE)
+        is_video = is_video.to(DEVICE)
+
         logits_per_image, logits_per_text = model(images, text)
-        ground_truth = torch.tensor([img_idx]).long().to(device)  # the index of the correct one
+        ground_truth = torch.tensor(target).long()  # the index of the correct one
         loss = loss_txt(logits_per_text, ground_truth)
         loss.backward()
-        if step % config.batchsize == 0:
-            print('STEP: '+ str(step))
-            print(f'TOTAL LOSS: {loss}')
+        if step % args.grad_accumulation == 0:
             wandb.log({'loss': loss})
-            if device == "cpu":
+            if DEVICE == "cpu":
                 optimizer.step()
             else:
                 convert_models_to_fp32(model)
