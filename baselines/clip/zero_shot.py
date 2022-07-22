@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--descr_path', type=str, default='../../data/valid_data.json')
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 args = parser.parse_args()
-clip_type = 'ViT-B/16'
+clip_type = 'ViT-L/14@336px'
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f'USING DEVICE: {device}')
 model, preprocess = clip.load(clip_type, device=device, jit=False)  # Must set jit=False for training

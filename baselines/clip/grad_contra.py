@@ -45,6 +45,7 @@ parser.add_argument('--vit', type=str)
 parser.add_argument('--decay', default=0.01, type=float)
 parser.add_argument('--epochs', type=int, default=30)
 parser.add_argument('--data_dir', type=str, default='../../data/')
+parser.add_argument('--loss_factor', type=float, default=0.1)
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument('--save_model', action='store_true')
 parser.add_argument("--job_id")
@@ -167,11 +168,15 @@ for i in range(args.epochs):
         counterfactual_loss = counterfactual_loss.mean()
         
         ground_truth = torch.tensor(target).long()  # the index of the correct one
-        loss = loss_txt(similarity, ground_truth) + args.loss_factor * counterfactual_loss
+        ce_loss = loss_txt(similarity, ground_truth)
+        loss = ce_loss + args.loss_factor * counterfactual_loss
         loss.backward()
         if step % args.grad_accumulation == 0:
             print(loss.item())
-            wandb.log({'loss': loss})
+            wandb.log({'Total Loss': loss})
+            wandb.log({'CE Loss': ce_loss})
+            wandb.log({'Counterfactual Loss': counterfactual_loss})
+
             if DEVICE == "cpu":
                 optimizer.step()
             else:
