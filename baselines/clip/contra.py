@@ -40,12 +40,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--batchsize', type=int, default=36)
 parser.add_argument('--grad_accumulation', type=int, default=1)
 parser.add_argument('--lr', type=float, default=4e-6)
+parser.add_argument('--max_lr', type=float, default=4e-6)
 parser.add_argument('--vit', type=str)
 parser.add_argument('--decay', default=0.01, type=float)
 parser.add_argument('--epochs', type=int, default=30)
 parser.add_argument('--data_dir', type=str, default='../../data/')
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument('--save_model', action='store_true')
+parser.add_argument('--cycle_scheduler', action='store_true')
 parser.add_argument("--job_id")
 
 args = parser.parse_args()
@@ -91,6 +93,9 @@ dataloader_valid = DataLoader(
 loss_img = nn.CrossEntropyLoss()
 loss_txt = nn.CrossEntropyLoss()
 optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-6, weight_decay=args.decay)
+if args.cycle_scheduler:
+    scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.max_lr, steps_per_epoch=len(dataloader_train)//(args.batchsize*args.grad_accumulation), epochs = args.epochs)
+
 best_val = 0
 
 for i in range(args.epochs):
@@ -161,3 +166,5 @@ for i in range(args.epochs):
                 optimizer.step()
                 clip.model.convert_weights(model)
             optimizer.zero_grad()
+            if args.cycle_scheduler:
+                scheduler.step()
