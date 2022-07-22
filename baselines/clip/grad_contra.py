@@ -46,6 +46,7 @@ parser.add_argument('--decay', default=0.01, type=float)
 parser.add_argument('--epochs', type=int, default=30)
 parser.add_argument('--data_dir', type=str, default='../../data/')
 parser.add_argument('--loss_factor', type=float, default=0.1)
+parser.add_argument('--abs_diff', action='store_true')
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument('--save_model', action='store_true')
 parser.add_argument("--job_id")
@@ -163,6 +164,9 @@ for i in range(args.epochs):
         optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
         diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])
         img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
+        if args.abs_diff:
+            diff = torch.abs(diff)
+            img_grad = torch.abs(img_grad)
         counterfactual_loss = 1 - torch.nn.functional.cosine_similarity(diff, img_grad, dim=1) #do abs() before maybe?
         counterfactual_loss = counterfactual_loss.reshape(batchsize, 10) * is_video.unsqueeze(1)
         counterfactual_loss = counterfactual_loss.mean()
