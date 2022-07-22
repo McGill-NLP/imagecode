@@ -176,7 +176,6 @@ for i in range(args.epochs):
         loss = ce_loss + args.loss_factor * counterfactual_loss
         loss.backward()
         if step % args.grad_accumulation == 0:
-            print(loss.item())
             wandb.log({'Total Loss': loss})
             wandb.log({'CE Loss': ce_loss})
             wandb.log({'Counterfactual Loss': counterfactual_loss})
