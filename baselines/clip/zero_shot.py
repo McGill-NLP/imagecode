@@ -60,7 +60,7 @@ for img_dir, data in tqdm(descriptions.items()):
         img_files = list((Path(img_dirs) / img_dir).glob("*.jpg"))
         img_files = sorted(img_files, key=lambda x: int(str(x).split('/')[-1].split('.')[0][3:]))
         img_embs = encode_images(img_files)
-        text_emb = encode_text(text.strip())
+        text_emb = encode_text(text)
         ranked_idx, sim, unsorted_sims = find_best_matches(text_emb, img_embs)
         ranked_files = [str(img_files[rank]).split('/')[-1][:-4] for rank in ranked_idx]
         target = str(img_files[int(img_idx)]).split('/')[-1][:-4]
