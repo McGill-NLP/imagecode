@@ -172,12 +172,12 @@ for i in range(args.epochs):
         counterfactual_loss = counterfactual_loss.mean()
         
         ground_truth = torch.tensor(target).long()  # the index of the correct one
-        ce_loss = loss_txt(similarity, ground_truth)
-        loss = ce_loss + args.loss_factor * counterfactual_loss
+        # ce_loss = loss_txt(similarity, ground_truth)
+        loss = args.loss_factor * counterfactual_loss
         loss.backward()
         if step % args.grad_accumulation == 0:
             wandb.log({'Total Loss': loss})
-            wandb.log({'CE Loss': ce_loss})
+            # wandb.log({'CE Loss': ce_loss})
             wandb.log({'Counterfactual Loss': counterfactual_loss})
 
             if DEVICE == "cpu":
