@@ -34,7 +34,8 @@ def find_best_matches(text_features, photo_features):
 def convert_models_to_fp32(model):
     for name, p in model.named_parameters():
         p.data = p.data.float()
-        p.grad.data = p.grad.data.float()
+        if p.grad is not None:
+            p.grad.data = p.grad.data.float()
 
 config = wandb.config
 parser = argparse.ArgumentParser()
@@ -43,7 +44,7 @@ parser.add_argument('--grad_accumulation', type=int, default=1)
 parser.add_argument('--lr', type=float, default=4e-6)
 parser.add_argument('--vit', type=str)
 parser.add_argument('--decay', default=0.01, type=float)
-parser.add_argument('--epochs', type=int, default=30)
+parser.add_argument('--epochs', type=int, default=3000)
 parser.add_argument('--data_dir', type=str, default='../../data/')
 parser.add_argument('--loss_factor', type=float, default=0.1)
 parser.add_argument('--abs_diff', action='store_true')
@@ -96,10 +97,11 @@ loss_txt = nn.CrossEntropyLoss()
 optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-6, weight_decay=args.decay)
 best_val = 0
 
+diff = torch.rand((3*224*224)).cuda()
 for i in range(args.epochs):
     save_model = False
     # EVALUATE
-    if i > 0:
+    if False:
         correct = 0
         total = 0
         for image, text, target, is_video in tqdm.tqdm(dataloader_valid):
@@ -139,43 +141,47 @@ for i in range(args.epochs):
                 }, f"checkpoints/CONTRA_clip_best_{string.replace('/', '')}.pt")
 
     print(f'EPOCH: {i}')
-    for step, (images, text, target, is_video) in tqdm.tqdm(enumerate(dataloader_train)):
+    for step, (images, text, target, is_video) in enumerate(dataloader_train):
+        images = images[:,0,:,]
         images = images.to(DEVICE).requires_grad_()
         text = text.to(DEVICE)
         target = target.to(DEVICE)
         is_video = is_video.to(DEVICE)
         batchsize, image_size = images.shape[0], images.shape[-1]
 
-        image_features_ = model.encode_image(images.flatten(0, 1)).reshape(*images.shape[:2], -1)
+        image_features_ = model.encode_image(images)
         text_features_ = model.encode_text(text.squeeze(1))
         image_features = image_features_ / image_features_.norm(dim=-1, keepdim=True)
         text_features = text_features_ / text_features_.norm(dim=-1, keepdim=True)
 	
         similarity = (image_features @ text_features.unsqueeze(2)).squeeze() * model.logit_scale.exp()
 
-        zero = torch.zeros((batchsize,1,3,image_size,image_size)).cuda()
-        diff = images - torch.cat([zero, images[:,:-1,:,:,:]], dim=1)
-        diff = diff - torch.cat([images[:,1:,:,:,:], zero], dim=1)
-
+        # zero = torch.zeros((batchsize,1,3,image_size,image_size)).cuda()
+        # diff = images - torch.cat([zero, images[:,:-1,:,:,:]], dim=1)
+        # diff1 = torch.abs(diff)
+        # diff2 = diff - torch.cat([images[:,1:,:,:,:], zero], dim=1)
+        # diff2 = torch.abs(diff2)
+        # diff = diff1 + diff2
         # target_sim = similarity.gather(1, target.unsqueeze(1))
-        similarity.sum().backward(retain_graph=True)
-        img_grad = images.grad
+        out = image_features_.sum()
+        img_grad = torch.autograd.grad(out, images, retain_graph=True, create_graph=True, allow_unused=True)[0]
 
-        optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
-        diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])
-        img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
+        # optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
+        # diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])[0]
+        # img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
+        img_grad = img_grad.flatten()
         if args.abs_diff:
-            diff = torch.abs(diff)
             img_grad = torch.abs(img_grad)
-        counterfactual_loss = 1 - torch.nn.functional.cosine_similarity(diff, img_grad, dim=1) #do abs() before maybe?
-        counterfactual_loss = counterfactual_loss.reshape(batchsize, 10) * is_video.unsqueeze(1)
+        counterfactual_loss = 1 - torch.nn.functional.cosine_similarity(diff, img_grad, dim=0) #do abs() before maybe?
+        # counterfactual_loss = counterfactual_loss.reshape(batchsize, 10) * is_video.unsqueeze(1)
         counterfactual_loss = counterfactual_loss.mean()
         
-        ground_truth = torch.tensor(target).long()  # the index of the correct one
+        # ground_truth = torch.tensor(target).long()  # the index of the correct one
         # ce_loss = loss_txt(similarity, ground_truth)
         loss = args.loss_factor * counterfactual_loss
         loss.backward()
         if step % args.grad_accumulation == 0:
+            print(f'Loss {loss}')
             wandb.log({'Total Loss': loss})
             # wandb.log({'CE Loss': ce_loss})
             wandb.log({'Counterfactual Loss': counterfactual_loss})
