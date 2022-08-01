@@ -20,7 +20,7 @@ import argparse
 from functools import partial
 random.seed(10)
 torch.manual_seed(10)
-wandb.init(project='clip-ViT-L14-336px-T5', settings=wandb.Settings(start_method='fork'))
+wandb.init(project='clip-ViT-L14', settings=wandb.Settings(start_method='fork'))
 
 def find_best_matches(text_features, photo_features):
     similarities = (photo_features @ text_features.T).squeeze(1)
@@ -162,6 +162,8 @@ for i in range(args.epochs):
 
         similarity = (image_features @ text_features.unsqueeze(2)).squeeze() * model.logit_scale.exp()
         ground_truth = torch.tensor(target).long()  # the index of the correct one
+        if args.batchsize == 1:
+            similarity = similarity.unsqueeze(0)
         loss = loss_txt(similarity, ground_truth)
         loss.backward()
         if step % args.grad_accumulation == 0:
