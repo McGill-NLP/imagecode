@@ -33,7 +33,8 @@ def find_best_matches(text_features, photo_features):
 def convert_models_to_fp32(model):
     for name, p in model.named_parameters():
         p.data = p.data.float()
-        p.grad.data = p.grad.data.float()
+        if p.grad is not None:
+            p.grad.data = p.grad.data.float()
 
 config = wandb.config
 parser = argparse.ArgumentParser()
@@ -50,6 +51,7 @@ parser.add_argument('--grad_clip', type=float, default=-1)
 parser.add_argument('--imgs_path', type=str, default='/network/scratch/b/benno.krojer/dataset/games')
 parser.add_argument('--save_model', action='store_true')
 parser.add_argument('--cycle_scheduler', action='store_true')
+parser.add_argument('--freeze_layer_num', type=int, default=0, help="Layer NO. of CLIP need to freeze.")
 parser.add_argument("--job_id")
 
 args = parser.parse_args()
@@ -58,6 +60,22 @@ wandb.config.update(args)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f'DEVICE USED: {DEVICE}')
 model, preprocess = clip.load(args.vit, device=DEVICE, jit=False)
+
+for name, param in model.named_parameters():
+    if name.startswith('transformer'):
+        continue
+    # top layers always need to train
+    if name.find("ln_final.") == 0 or name.find("text_projection") == 0 or name.find("logit_scale") == 0 \
+            or name.find("visual.ln_post.") == 0 or name.find("visual.proj") == 0:
+        continue    # need to train
+    elif name.find("visual.transformer.resblocks.") == 0 or name.find("transformer.resblocks.") == 0:
+        layer_num = int(name.split(".resblocks.")[1].split(".")[0])
+        if layer_num >= args.freeze_layer_num:
+            continue    # need to train
+        # paramenters which < freeze_layer_num will be freezed
+    param.requires_grad = False
+
+
 wandb.watch(model)
 if DEVICE == "cpu":
     model.float()
@@ -112,7 +130,7 @@ for i in range(args.epochs):
     if i > 0:
         correct = 0
         total = 0
-        for image, text, target, is_video in tqdm.tqdm(dataloader_valid):
+        for image, text, target, is_video, img_dir in tqdm.tqdm(dataloader_valid):
             image = image.to(DEVICE)
             text = text.to(DEVICE)
             target = target.to(DEVICE)
@@ -149,7 +167,7 @@ for i in range(args.epochs):
                 }, f"checkpoints/CONTRA_clip_best_{string.replace('/', '')}.pt")
 
     print(f'EPOCH: {i}')
-    for step, (images, text, target, is_video) in tqdm.tqdm(enumerate(dataloader_train)):
+    for step, (images, text, target, is_video, img_dir) in tqdm.tqdm(enumerate(dataloader_train)):
         images = images.to(DEVICE)
         text = text.to(DEVICE)
         target = target.to(DEVICE)

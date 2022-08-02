@@ -78,7 +78,7 @@ class ImageCoDeDataset(Dataset):
         txt = self.text_transform(text)
         is_video = torch.tensor(1 if 'open-images' not in img_dir else 0)
         
-        return img, txt, img_idx, is_video
+        return img, txt, img_idx, is_video, img_dir
     
     def __len__(self):
         return len(self.data)

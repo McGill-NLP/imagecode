@@ -18,6 +18,7 @@ from PIL import Image
 from pathlib import Path
 from collections import defaultdict
 import argparse
+from torchvision.utils import save_image
 from functools import partial
 random.seed(10)
 torch.manual_seed(10)
@@ -96,6 +97,7 @@ loss_img = nn.CrossEntropyLoss()
 loss_txt = nn.CrossEntropyLoss()
 optimizer = optim.AdamW(model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-6, weight_decay=args.decay)
 best_val = 0
+VISUALIZE = True
 
 for i in range(args.epochs):
     save_model = False
@@ -103,7 +105,7 @@ for i in range(args.epochs):
     if i > 0:
         correct = 0
         total = 0
-        for image, text, target, is_video in tqdm.tqdm(dataloader_valid):
+        for image, text, target, is_video, img_dir in tqdm.tqdm(dataloader_valid):
             image = image.to(DEVICE)
             text = text.to(DEVICE)
             target = target.to(DEVICE)
@@ -140,7 +142,7 @@ for i in range(args.epochs):
                 }, f"checkpoints/CONTRA_clip_best_{string.replace('/', '')}.pt")
 
     print(f'EPOCH: {i}')
-    for step, (images, text, target, is_video) in tqdm.tqdm(enumerate(dataloader_train)):
+    for step, (images, text, target, is_video, img_dir) in tqdm.tqdm(enumerate(dataloader_train)):
         images = images.to(DEVICE).requires_grad_()
         text = text.to(DEVICE)
         target = target.to(DEVICE)
@@ -161,28 +163,37 @@ for i in range(args.epochs):
 
         img_grad = torch.autograd.grad(out, images, retain_graph=True, create_graph=True, allow_unused=True)[0]
 
-        # optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
-        diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])
-        img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
-        if args.abs_diff:
-            diff = torch.abs(diff)
-            img_grad = torch.abs(img_grad)
-        counterfactual_loss = 1 - torch.nn.functional.cosine_similarity(diff, img_grad, dim=1) #do abs() before maybe?
-        counterfactual_loss = counterfactual_loss.reshape(batchsize, 10) * is_video.unsqueeze(1)
-        counterfactual_loss = counterfactual_loss.mean()
+        # VISUALIZE:
         
-        ground_truth = torch.tensor(target).long()  # the index of the correct one
-        ce_loss = loss_txt(similarity, ground_truth)
-        loss = ce_loss + args.loss_factor * counterfactual_loss
-        loss.backward()
-        if step % args.grad_accumulation == 0:
-            wandb.log({'Total Loss': loss})
-            wandb.log({'CE Loss': ce_loss})
-            wandb.log({'Counterfactual Loss': counterfactual_loss})
-            if DEVICE == "cpu":
-                optimizer.step()
-            else:
-                convert_models_to_fp32(model)
-                optimizer.step()
-                clip.model.convert_weights(model)
-            optimizer.zero_grad()
+
+        # optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
+        if VISUALIZE:
+            for img_set in img_grad:
+                for i, single_img in enumerate(img_set):
+                    os.makedirs(f'img_gradient/{img_dir}')
+                    save_image(single_img, f'img_gradient/{img_dir}/{i}.png')
+        if not VISUALIZE:
+            diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])
+            img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
+            if args.abs_diff:
+                diff = torch.abs(diff)
+                img_grad = torch.abs(img_grad)
+            counterfactual_loss = 1 - torch.nn.functional.cosine_similarity(diff, img_grad, dim=1) #do abs() before maybe?
+            counterfactual_loss = counterfactual_loss.reshape(batchsize, 10) * is_video.unsqueeze(1)
+            counterfactual_loss = counterfactual_loss.mean()
+            
+            ground_truth = torch.tensor(target).long()  # the index of the correct one
+            ce_loss = loss_txt(similarity, ground_truth)
+            loss = ce_loss + args.loss_factor * counterfactual_loss
+            loss.backward()
+            if step % args.grad_accumulation == 0:
+                wandb.log({'Total Loss': loss})
+                wandb.log({'CE Loss': ce_loss})
+                wandb.log({'Counterfactual Loss': counterfactual_loss})
+                if DEVICE == "cpu":
+                    optimizer.step()
+                else:
+                    convert_models_to_fp32(model)
+                    optimizer.step()
+                    clip.model.convert_weights(model)
+                optimizer.zero_grad()
