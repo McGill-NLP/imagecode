@@ -46,6 +46,8 @@ And the images under `data/` have the following structure. Each folder contains 
   ├── video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2
       │   ├── ...
 ```
+
+Checkpoints for our CLIP models in the paper can be downloaded [here](https://drive.google.com/drive/folders/1PTvUgtyKAqzUPQLRn8792QQx7G-5zs9V?usp=sharing). For example `CONTRA-...` is used to initialize the CLIP vision and text encoder for our strongest baseline model `TEMP-CONTEXTUAL-...`.
 ### Leaderboard
 
 Based on this you can train your model and test on the unlabeled test set:
