@@ -168,10 +168,12 @@ for i in range(args.epochs):
 
         # optimizer.zero_grad() #make sure that we don't update weights based on the previous backward step
         if VISUALIZE:
-            for img_set in img_grad:
+            for j, img_set in enumerate(img_grad):
                 for i, single_img in enumerate(img_set):
-                    os.makedirs(f'img_gradient/{img_dir}')
-                    save_image(single_img, f'img_gradient/{img_dir}/{i}.png')
+                    if not os.path.isdir(f'img_gradient/{img_dir[j]}'):
+                        os.makedirs(f'img_gradient/{img_dir[j]}')
+                    single_img = single_img.sum(dim=0)
+                    save_image(single_img, f'img_gradient/{img_dir[j]}/{i}.png')
         if not VISUALIZE:
             diff = diff.reshape(diff.shape[0]*diff.shape[1], diff.shape[2]*diff.shape[3]*diff.shape[4])
             img_grad = img_grad.reshape(img_grad.shape[0]*img_grad.shape[1], img_grad.shape[2]*img_grad.shape[3]*img_grad.shape[4])
