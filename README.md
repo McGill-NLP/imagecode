@@ -8,7 +8,7 @@ This repository contains code and data for ImageCoDe: [Image Retrieval from Cont
 
 ## Updates
 
-[29/2/2024] We release a simpler version of ImageCoDe to faciliate progress on the task, called *ImageCoDe-simple*. Instead of 10 images per example, it is now only 2 images, to allow current state-of-the-art models to easily process and reason across them at once. You can find more details under the Data section below. TODO: reformat the secret test set into the simplified format.
+[29/2/2024] **We release a simpler version of ImageCoDe to faciliate progress on the task, called *ImageCoDe-simple***. Instead of 10 images per example, it is now only 2 images, to allow current state-of-the-art models to easily process and reason across them at once. You can find more details under the Data section below. TODO: reformat the secret test set into the simplified format.
 
 ## Data
 All collected descriptions for the training and validation set are under [`data/train_data.json`](data/train_data.json) and [`data/valid_data.json`](data/valid_data.json), as well as [`data/train_simple.json`](data/train_simple.json) and [`data/valid_simple.json`](data/valid_simple.json) for ImageCoDe-simple.
@@ -37,7 +37,8 @@ The format for [`data/train_simple.json`](data/train_simple.json) looks like thi
         "neg_idx": 3,
         "caption": "A deer head is mounted horizontally next to a painting"
     },
-...
+{"..."}
+]
 ```
 And the images under `data/` have the following structure. Each folder contains 10 images. If the images are video frames, the number X in imgX.jpg indicates the frame number:
 ```
