@@ -6,8 +6,12 @@ This repository contains code and data for ImageCoDe: [Image Retrieval from Cont
 
 ![Example](https://github.com/mcgill-nlp/ImageCoDe/blob/main/example.png?raw=true)
 
+## Updates
+
+[29/2/2024] We release a simpler version of ImageCoDe to faciliate progress on the task, called *ImageCoDe-simple*. Instead of 10 images per example, it is now only 2 images, to allow current state-of-the-art models to easily process and reason across them at once. You can find more details under the Data section below. TODO: reformat the secret test set into the simplified format.
+
 ## Data
-All collected descriptions for the training and validation set are under [`data/train_data.json`](data/train_data.json) and [`data/valid_data.json`](data/valid_data.json).
+All collected descriptions for the training and validation set are under [`data/train_data.json`](data/train_data.json) and [`data/valid_data.json`](data/valid_data.json), as well as [`data/train_simple.json`](data/train_simple.json) and [`data/valid_simple.json`](data/valid_simple.json) for ImageCoDe-simple.
 
 Image sets can be downloaded on [Zenodo](https://zenodo.org/record/6518944#.YnLboHWZPUQ) or [GoogleDrive](https://drive.google.com/file/d/1OIKNyU0F9lThbaZZ3Jvm7AlF94n1MzDk/view?usp=sharing) and should be unzipped in `data/`.
 
@@ -23,18 +27,17 @@ For ViLBERT experiments, you need to download a pretrained ViLBERT checkpoint fr
 Since ViLBERT uses image features from Faster R-CNN, you also have to downloaded these for all ImageCoDe images here: [Google Drive link](https://drive.google.com/drive/folders/1Gm22SlCM1V63oZIVS0riqWlySL_g5DJc?usp=sharing). Save the file as `data/rcnn-features36-36.lmdb`.
 The same procedure applies for UNITER.
 
-The format for [`data/train_data.json`](data/train_data.json) looks like this:
+The format for [`data/train_simple.json`](data/train_simple.json) looks like this:
 
 ```json
-{
-  "MSR-VTT-videoTrainValVideo_video2044-shot1_0": {
-    "6": "a mom holding her babies in the middle of the picture, no other image intervenes with the image.",
-    "7": "The image is fading between a woman holding a baby and a woman sitting with a red background. The hands of the woman sitting aren't visible."
-  },
-  "video-storytelling-videochristmas_56Nm66j-i5Q-shot14_2": {
-  "..."
-  }
-}
+[
+    {
+        "directory": "open-images-1815_f91d6f546e63f20d",
+        "pos_idx": 5,
+        "neg_idx": 3,
+        "caption": "A deer head is mounted horizontally next to a painting"
+    },
+...
 ```
 And the images under `data/` have the following structure. Each folder contains 10 images. If the images are video frames, the number X in imgX.jpg indicates the frame number:
 ```
